@@ -1,1 +1,1057 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Alidux — Умный дом</title>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+/* ─── Reset & Variables ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:       #f7f9ff;
+  --surface:  #ffffff;
+  --border:   #e4eaf8;
+  --text:     #0f172a;
+  --muted:    #64748b;
+  --blue:     #2563eb;
+  --blue-d:   #1d4ed8;
+  --blue-l:   #3b82f6;
+  --blue-bg:  #eff6ff;
+  --green:    #16a34a;
+  --green-l:  #22c55e;
+  --red:      #dc2626;
+  --red-l:    #ef4444;
+  --orange:   #f97316;
+  --yellow:   #eab308;
+  --radius:   18px;
+  --shadow-sm: 0 1px 6px rgba(37,99,235,0.06);
+  --shadow:    0 4px 20px rgba(37,99,235,0.10);
+  --shadow-lg: 0 12px 40px rgba(37,99,235,0.16);
+}
 
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg); color: var(--text);
+  min-height: 100vh; overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Notification Toast ─────────────────────────────────────────────────── */
+#toast-container {
+  position: fixed; top: 80px; right: 16px; z-index: 9999;
+  display: flex; flex-direction: column; gap: 10px; max-width: 360px;
+  pointer-events: none;
+}
+.toast {
+  background: #fff; border-left: 4px solid var(--blue);
+  border-radius: 12px; padding: 14px 16px;
+  box-shadow: var(--shadow-lg);
+  font-size: 13px; font-weight: 600; color: var(--text);
+  display: flex; align-items: flex-start; gap: 12px;
+  pointer-events: all; cursor: pointer;
+  animation: slideIn .3s ease;
+  transition: opacity .3s;
+}
+.toast.alarm { border-color: var(--red); }
+.toast.warn  { border-color: var(--orange); }
+.toast.ok    { border-color: var(--green); }
+.toast-icon  { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+.toast-body  { flex: 1; }
+.toast-title { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+.toast-msg   { font-weight: 500; color: var(--muted); font-size: 12px; }
+@keyframes slideIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+/* ─── Header ─────────────────────────────────────────────────────────────── */
+header {
+  background: rgba(255,255,255,0.95); backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border); height: 64px;
+  padding: 0 clamp(16px, 4vw, 40px);
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 1px 16px rgba(37,99,235,0.06);
+}
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.brand img { width: 32px; height: 32px; object-fit: contain; }
+.brand-name {
+  font-size: 20px; font-weight: 800; letter-spacing: -.5px;
+  background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.header-right { display: flex; align-items: center; gap: 10px; }
+.user-chip {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 12px; background: var(--blue-bg);
+  border: 1px solid var(--border); border-radius: 999px;
+}
+.user-avatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb, #60a5fa);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.user-name { font-size: 13px; font-weight: 600; color: var(--blue); }
+.logout-btn {
+  padding: 7px 14px; border-radius: 10px; background: transparent;
+  border: 1.5px solid var(--border); color: var(--muted);
+  font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s;
+  font-family: inherit;
+}
+.logout-btn:hover { border-color: var(--red-l); color: var(--red); background: #fef2f2; }
+@media(max-width: 480px) {
+  .user-name { display: none; }
+  .logout-btn { padding: 7px 10px; }
+}
+
+/* ─── Main ───────────────────────────────────────────────────────────────── */
+main { padding: clamp(20px, 4vw, 40px) clamp(16px, 4vw, 40px); max-width: 1300px; margin: 0 auto; }
+
+/* ─── Section Header ─────────────────────────────────────────────────────── */
+.section-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+}
+.section-title h2 { font-size: clamp(18px, 3vw, 24px); font-weight: 800; }
+.section-title p  { font-size: 13px; color: var(--muted); margin-top: 3px; }
+
+.add-btn {
+  display: flex; align-items: center; gap: 8px;
+  padding: 11px 20px;
+  background: linear-gradient(135deg, var(--blue), var(--blue-d));
+  border: none; border-radius: 13px;
+  color: #fff; font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: all .2s; font-family: inherit;
+  box-shadow: 0 4px 14px rgba(37,99,235,0.35); white-space: nowrap;
+}
+.add-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(37,99,235,0.45); }
+.add-btn:active { transform: none; }
+
+/* ─── Stats ──────────────────────────────────────────────────────────────── */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 14px; margin-bottom: 28px;
+}
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px 20px;
+  box-shadow: var(--shadow-sm);
+}
+.stat-label { font-size: 11px; color: var(--muted); font-weight: 700;
+  text-transform: uppercase; letter-spacing: .6px; }
+.stat-val { font-size: 26px; font-weight: 800; margin-top: 6px; color: var(--blue); }
+
+/* ─── Device Grid ────────────────────────────────────────────────────────── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+.device-card {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 24px 18px 20px;
+  cursor: pointer; transition: all .25s; text-align: center;
+  position: relative; box-shadow: var(--shadow-sm); user-select: none;
+}
+.device-card:hover { transform: translateY(-4px); border-color: var(--blue-l); box-shadow: var(--shadow-lg); }
+.device-card.offline-card { opacity: .7; cursor: default; }
+.device-card.offline-card:hover { transform: none; border-color: var(--border); box-shadow: var(--shadow-sm); }
+.device-card.leak-active  { border-color: var(--red-l) !important; animation: pulse-red 2s infinite; }
+.device-card.leak-active:hover { transform: none; }
+@keyframes pulse-red { 0%,100%{box-shadow:0 2px 14px rgba(220,38,38,0)} 50%{box-shadow:0 4px 28px rgba(220,38,38,.28)} }
+
+.device-icon-wrap {
+  width: 72px; height: 72px; margin: 0 auto 14px;
+  border-radius: 18px; background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px; transition: transform .25s;
+}
+.device-card:hover .device-icon-wrap { transform: scale(1.08); }
+.device-card.leak-active .device-icon-wrap { background: linear-gradient(135deg, #fef2f2, #fee2e2); }
+.device-card.offline-card .device-icon-wrap { background: #f1f5f9; filter: grayscale(.5); }
+
+.device-name {
+  font-size: 14px; font-weight: 700; color: var(--text);
+  margin-bottom: 10px; word-break: break-word; line-height: 1.3;
+}
+.status-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 11px; border-radius: 999px; font-size: 11px; font-weight: 700;
+}
+.pill-online  { background: #f0fdf4; color: var(--green);  border: 1px solid #bbf7d0; }
+.pill-leak    { background: #fef2f2; color: var(--red);    border: 1px solid #fecaca; }
+.pill-offline { background: #f8fafc; color: var(--muted);  border: 1px solid #e2e8f0; }
+
+.status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.dot-online  { background: var(--green-l); box-shadow: 0 0 5px var(--green-l); }
+.dot-leak    { background: var(--red-l);   animation: blink 1s infinite; }
+.dot-offline { background: #cbd5e1; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+.role-badge {
+  position: absolute; top: 10px; right: 10px;
+  font-size: 10px; font-weight: 700; padding: 2px 7px;
+  border-radius: 999px; background: #f0f9ff; color: var(--blue);
+  border: 1px solid var(--border);
+}
+.role-badge.viewer { background: #fafafa; color: var(--muted); }
+
+.empty {
+  grid-column: 1/-1; background: var(--surface);
+  border: 2px dashed var(--border); border-radius: 20px;
+  padding: clamp(50px, 8vw, 80px) 20px; text-align: center;
+}
+.empty-icon { font-size: 56px; display: block; margin-bottom: 14px; opacity: .4; }
+.empty h3   { font-size: 17px; font-weight: 700; color: var(--text); }
+.empty p    { font-size: 13px; color: var(--muted); margin-top: 6px; }
+
+/* ─── Overlay & Panel ───────────────────────────────────────────────────── */
+.overlay {
+  position: fixed; inset: 0; background: rgba(15,23,42,0.5);
+  backdrop-filter: blur(3px); z-index: 200;
+  opacity: 0; pointer-events: none; transition: opacity .25s;
+}
+.overlay.open { opacity: 1; pointer-events: all; }
+
+.panel {
+  position: fixed; top: 0; right: 0; height: 100%;
+  width: min(460px, 100vw);
+  background: #fff; border-left: 1px solid var(--border);
+  z-index: 201; transform: translateX(100%);
+  transition: transform .32s cubic-bezier(.4,0,.2,1);
+  display: flex; flex-direction: column;
+  box-shadow: -8px 0 50px rgba(37,99,235,0.12);
+}
+.panel.open { transform: translateX(0); }
+
+.panel-hdr {
+  padding: 20px 22px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 14px;
+  background: linear-gradient(135deg, #f0f6ff, #fff);
+  flex-shrink: 0;
+}
+.panel-icon-wrap {
+  width: 52px; height: 52px; border-radius: 16px;
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; flex-shrink: 0;
+}
+.panel-title { font-size: 16px; font-weight: 800; line-height: 1.2; }
+.panel-sub   { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.panel-close {
+  width: 34px; height: 34px; border-radius: 10px;
+  background: #f1f5f9; border: none; color: var(--muted);
+  font-size: 18px; cursor: pointer; flex-shrink: 0; margin-left: auto;
+  transition: all .2s;
+}
+.panel-close:hover { background: #fee2e2; color: var(--red); }
+
+.panel-offline-msg {
+  margin: 20px 22px; padding: 16px 18px;
+  background: #f8fafc; border: 1.5px solid #e2e8f0;
+  border-radius: 14px; text-align: center;
+  font-size: 14px; color: var(--muted); font-weight: 600;
+}
+.panel-offline-msg .big { font-size: 36px; display: block; margin-bottom: 8px; }
+
+.panel-body { padding: 20px 22px; overflow-y: auto; flex: 1; }
+
+/* Sections inside panel */
+.sec-label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+  color: var(--muted); font-weight: 700; margin-bottom: 10px; margin-top: 18px;
+}
+.sec-label:first-child { margin-top: 0; }
+.ic {
+  background: #f8faff; border: 1.5px solid var(--border);
+  border-radius: 14px; padding: 16px 18px; margin-bottom: 12px;
+}
+.bstat { display: flex; align-items: center; gap: 12px; font-size: 15px; font-weight: 700; }
+.last-seen { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+/* Battery */
+.battery-bar-bg  { height: 7px; background: #e2e8f0; border-radius: 4px; overflow: hidden; margin-top: 10px; }
+.battery-bar-fill { height: 100%; border-radius: 4px; transition: width .5s, background .5s; }
+.battery-label   { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+/* Rename */
+.rename-btn {
+  background: none; border: none; cursor: pointer; color: var(--muted);
+  font-size: 13px; padding: 2px 5px; border-radius: 6px; transition: all .2s;
+}
+.rename-btn:hover { background: var(--blue-bg); color: var(--blue); }
+
+/* Valve button */
+.valve-btn {
+  width: 100%; padding: 13px; border: none; border-radius: 12px;
+  font-size: 14px; font-weight: 700; cursor: pointer; color: #fff;
+  margin-bottom: 14px; transition: opacity .2s, transform .15s;
+  font-family: inherit; position: relative;
+}
+.valve-btn:hover { opacity: .88; }
+.valve-btn:active { transform: scale(.98); }
+.valve-btn:disabled { opacity: .5; cursor: not-allowed; }
+.v-open  { background: linear-gradient(135deg, var(--blue), var(--blue-d)); }
+.v-close { background: linear-gradient(135deg, var(--red), #b91c1c); }
+
+/* Slider */
+.slider-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 4px;
+}
+.slider-row input[type=range] {
+  flex: 1; accent-color: var(--blue); cursor: pointer; height: 6px;
+}
+.slider-val {
+  min-width: 44px; text-align: center; font-size: 13px; font-weight: 700;
+  background: var(--blue-bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 4px 7px; color: var(--blue);
+}
+.slider-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+
+/* Logs */
+.log-item {
+  display: flex; flex-direction: column; padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.log-item:last-child { border-bottom: none; }
+.log-time { font-size: 10px; color: var(--muted); }
+.log-msg  { font-size: 13px; font-weight: 600; color: var(--text); margin-top: 2px; }
+.log-leak .log-msg { color: var(--red); }
+.log-dry  .log-msg { color: var(--green); }
+.log-valve .log-msg { color: var(--blue); }
+.log-low_battery .log-msg { color: var(--orange); }
+.log-shared .log-msg { color: var(--muted); }
+
+/* Share panel */
+.share-user-row {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  background: #f8faff; border: 1px solid var(--border);
+  border-radius: 11px; margin-bottom: 8px;
+}
+.share-user-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #60a5fa);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.share-user-name { flex: 1; font-size: 13px; font-weight: 700; }
+.share-role-badge {
+  font-size: 11px; font-weight: 700; padding: 3px 9px;
+  border-radius: 999px; border: 1px solid;
+}
+.role-full   { color: var(--blue); border-color: #bfdbfe; background: var(--blue-bg); }
+.role-viewer { color: var(--muted); border-color: var(--border); background: #f8fafc; }
+.revoke-btn {
+  background: none; border: none; cursor: pointer; color: var(--muted);
+  font-size: 16px; padding: 2px; transition: color .2s;
+}
+.revoke-btn:hover { color: var(--red); }
+
+/* Action buttons */
+.action-btn {
+  width: 100%; padding: 12px; border-radius: 12px;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  font-family: inherit; transition: all .2s; margin-bottom: 10px;
+}
+.action-outline {
+  background: none; border: 1.5px solid var(--border); color: var(--muted);
+}
+.action-outline:hover { border-color: var(--blue-l); color: var(--blue); background: var(--blue-bg); }
+.action-red {
+  background: none; border: 1.5px solid #fecaca; color: var(--red);
+}
+.action-red:hover { background: #fef2f2; }
+
+/* Code display */
+.code-display {
+  display: flex; justify-content: center; align-items: center; gap: 8px;
+  margin: 16px 0;
+}
+.code-digit {
+  width: 52px; height: 64px; border-radius: 14px;
+  background: var(--blue-bg); border: 2px solid var(--blue-l);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px; font-weight: 900; color: var(--blue);
+  font-family: 'Courier New', monospace;
+  box-shadow: 0 4px 14px rgba(37,99,235,0.15);
+}
+.code-timer {
+  text-align: center; font-size: 12px; color: var(--muted); font-weight: 600;
+  margin-top: 8px;
+}
+.code-timer.expiring { color: var(--red); }
+
+/* Spinner */
+.spinner {
+  display: inline-block; width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,.35); border-top-color: #fff;
+  border-radius: 50%; animation: spin .6s linear infinite;
+  vertical-align: middle; margin-right: 7px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Chip ID */
+.chip-block {
+  font-family: monospace; font-size: 12px; color: var(--blue);
+  background: var(--blue-bg); padding: 4px 9px; border-radius: 7px;
+  border: 1px dashed var(--blue-l);
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .stat-val { font-size: 22px; }
+  .panel-hdr { padding: 16px; }
+  .panel-body { padding: 14px 16px; }
+  .panel-offline-msg { margin: 14px 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Toast container for alerts/notifications -->
+<div id="toast-container"></div>
+
+<header>
+  <a class="brand" href="/">
+    <img src="https://alidux.by/favicon/favicon.svg" alt="Alidux" onerror="this.style.display='none'">
+    <span class="brand-name">Alidux</span>
+  </a>
+  <div class="header-right">
+    <div class="user-chip">
+      <div class="user-avatar" id="user-avatar">?</div>
+      <span class="user-name">{{ username }}</span>
+    </div>
+    <form action="/logout" method="post">
+      <button type="submit" class="logout-btn">Выйти</button>
+    </form>
+  </div>
+</header>
+
+<main>
+  <div class="section-hdr">
+    <div class="section-title">
+      <h2>Мои устройства</h2>
+      <p>Управление умным домом</p>
+    </div>
+    <button class="add-btn" onclick="showAdd()">＋ Добавить</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">Всего</div>
+      <div class="stat-val" id="stat-total">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Онлайн</div>
+      <div class="stat-val" style="color:var(--green)" id="stat-online">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Протечки</div>
+      <div class="stat-val" style="color:var(--red)" id="stat-leaks">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Офлайн</div>
+      <div class="stat-val" style="color:var(--muted)" id="stat-offline">—</div>
+    </div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+</main>
+
+<!-- Overlay -->
+<div class="overlay" id="overlay" onclick="closePanel()"></div>
+
+<!-- Device panel -->
+<div class="panel" id="panel">
+  <div class="panel-hdr">
+    <div class="panel-icon-wrap" id="p-icon">🏠</div>
+    <div style="flex:1; min-width:0;">
+      <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+        <div class="panel-title" id="p-title"></div>
+        <button class="rename-btn" id="p-rename-btn" onclick="doRename()" title="Переименовать">✏️</button>
+      </div>
+      <div class="panel-sub">
+        Chip: <span id="p-chip" class="chip-block"></span>
+        <span id="p-role-label" style="margin-left:6px; font-size:10px; color:var(--muted);"></span>
+      </div>
+    </div>
+    <button class="panel-close" onclick="closePanel()">✕</button>
+  </div>
+
+  <!-- Shown when offline -->
+  <div id="panel-offline" class="panel-offline-msg" style="display:none;">
+    <span class="big">📡</span>
+    Устройство офлайн.<br>
+    <span style="font-size:12px; font-weight:500;">Управление недоступно пока устройство не подключится к сети.</span>
+    <div id="p-lastseen-offline" style="font-size:11px; margin-top:8px; opacity:.7;"></div>
+  </div>
+
+  <!-- Online content -->
+  <div class="panel-body" id="panel-online-body">
+
+    <div class="sec-label">Статус устройства</div>
+    <div class="ic">
+      <div class="bstat">
+        <div class="status-dot" id="p-bdot"></div>
+        <span id="p-status-txt"></span>
+      </div>
+      <div class="last-seen" id="p-lastseen"></div>
+      <div style="margin-top:12px;">
+        <div class="battery-bar-bg">
+          <div class="battery-bar-fill" id="p-battery-bar"></div>
+        </div>
+        <div class="battery-label" id="p-battery-label"></div>
+      </div>
+    </div>
+
+    <div id="valve-section">
+      <div class="sec-label">Управление краном</div>
+      <div class="ic">
+        <button class="valve-btn" id="p-valve-btn" onclick="doValve()">—</button>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div style="font-size:12px; color:var(--muted); font-weight:600;">Открытие крана</div>
+          <div class="slider-val" id="p-slider-val">100</div>
+        </div>
+        <div class="slider-row">
+          <span style="font-size:11px; color:var(--muted);">0%</span>
+          <input type="range" id="p-slider" min="0" max="100" step="5"
+                 oninput="onSliderInput(this.value)"
+                 onchange="doSlider(this.value)">
+          <span style="font-size:11px; color:var(--muted);">100%</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="log-section">
+      <div class="sec-label" style="display:flex; justify-content:space-between; align-items:center;">
+        <span>Журнал событий</span>
+        <button onclick="loadLogs(selId)"
+          style="background:none;border:none;color:var(--blue);font-size:12px;cursor:pointer;font-weight:600;">
+          ↻ Обновить
+        </button>
+      </div>
+      <div class="ic" id="p-logs" style="max-height:220px; overflow-y:auto; padding:12px 14px;"></div>
+    </div>
+
+    <!-- Actions -->
+    <div id="owner-actions" style="margin-top:6px;">
+      <div class="sec-label">Общий доступ</div>
+      <button class="action-btn action-outline" onclick="showShares()">👨‍👩‍👧 Семейный доступ</button>
+      <div class="sec-label" style="margin-top:4px;"></div>
+      <button class="action-btn action-red" onclick="doDelete()">🗑 Отвязать устройство</button>
+    </div>
+    <div id="viewer-notice" style="display:none; margin-top:10px; padding:12px 14px;
+      background:#fafafa; border-radius:12px; font-size:12px; color:var(--muted);
+      border:1px solid var(--border); text-align:center;">
+      👁 У вас права просмотра — управление недоступно
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ─── State ─────────────────────────────────────────────────────────────────── */
+let devices = [];
+let selId   = null;
+const username = '{{ username }}';
+document.getElementById('user-avatar').textContent = username[0]?.toUpperCase() || '?';
+
+// Track leak state for notifications
+const leakNotified = new Set();
+
+/* ─── Notifications ─────────────────────────────────────────────────────────── */
+function requestNotifPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+requestNotifPermission();
+
+function showToast(type, title, msg, duration = 6000) {
+  const icons = { alarm: '🚨', warn: '⚠️', ok: '✅', info: 'ℹ️' };
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `
+    <div class="toast-icon">${icons[type] || 'ℹ️'}</div>
+    <div class="toast-body">
+      <div class="toast-title">${escHtml(title)}</div>
+      <div class="toast-msg">${escHtml(msg)}</div>
+    </div>`;
+  toast.onclick = () => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); };
+  container.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, duration);
+}
+
+function sendBrowserNotif(title, body) {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try { new Notification(title, { body, icon: 'https://alidux.by/favicon/favicon.svg' }); } catch {}
+  }
+}
+
+/* ─── Utils ──────────────────────────────────────────────────────────────────── */
+function escHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fmtDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso.endsWith('Z') ? iso : iso + 'Z');
+  return d.toLocaleString('ru-RU');
+}
+function batteryColor(pct) {
+  if (pct > 50) return 'var(--green)';
+  if (pct > 20) return 'var(--orange)';
+  return 'var(--red)';
+}
+function deviceIcon(d) {
+  if (d.leak)       return '💦';
+  if (!d.online)    return '📴';
+  const types = { water_sensor: '🚿', thermostat: '🌡️', light: '💡', plug: '🔌', camera: '📷' };
+  return types[d.device_type] || '🏠';
+}
+
+/* ─── Data loading ───────────────────────────────────────────────────────────── */
+async function load() {
+  try {
+    const r = await fetch('/api/devices');
+    if (r.status === 401) { location.href = '/login'; return; }
+    if (!r.ok) return;
+    const newDevices = await r.json();
+
+    // Check for new leaks → notify
+    for (const d of newDevices) {
+      if (d.leak && !leakNotified.has(d.id)) {
+        leakNotified.add(d.id);
+        showToast('alarm', '⚠️ Протечка!', `Датчик «${d.name}» зафиксировал протечку`);
+        sendBrowserNotif('⚠️ Протечка обнаружена!', `Датчик «${d.name}» сработал`);
+      }
+      if (!d.leak && leakNotified.has(d.id)) {
+        leakNotified.delete(d.id);
+        showToast('ok', 'Протечка устранена', `Датчик «${d.name}» сух`);
+      }
+      if (d.battery !== undefined) {
+        const prev = devices.find(x => x.id === d.id);
+        if (prev && prev.battery > 20 && d.battery <= 20) {
+          showToast('warn', 'Низкий заряд', `«${d.name}»: батарея ${d.battery}%`);
+        }
+      }
+    }
+
+    devices = newDevices;
+
+    const total   = devices.length;
+    const online  = devices.filter(d => d.online).length;
+    const leaks   = devices.filter(d => d.leak).length;
+    const offline = devices.filter(d => !d.online).length;
+    document.getElementById('stat-total').textContent   = total;
+    document.getElementById('stat-online').textContent  = online;
+    document.getElementById('stat-leaks').textContent   = leaks;
+    document.getElementById('stat-offline').textContent = offline;
+
+    renderGrid();
+
+    if (selId) {
+      const d = devices.find(x => x.id === selId);
+      if (d) updatePanelData(d);
+    }
+  } catch (e) {
+    console.error('load error:', e);
+  }
+}
+
+/* ─── Grid rendering ─────────────────────────────────────────────────────────── */
+function renderGrid() {
+  const g = document.getElementById('grid');
+  if (!devices.length) {
+    g.innerHTML = `
+      <div class="empty">
+        <span class="empty-icon">🏠</span>
+        <h3>Устройств пока нет</h3>
+        <p>Включите устройство и нажмите «Добавить»</p>
+      </div>`;
+    return;
+  }
+  g.innerHTML = devices.map(d => {
+    const cls  = d.leak ? 'leak-active' : (!d.online ? 'offline-card' : '');
+    const pill = d.leak ? 'pill-leak' : (d.online ? 'pill-online' : 'pill-offline');
+    const dot  = d.leak ? 'dot-leak'  : (d.online ? 'dot-online'  : 'dot-offline');
+    const txt  = d.leak ? 'Протечка'  : (d.online ? 'Онлайн'      : 'Офлайн');
+    const roleTag = d.role !== 'owner'
+      ? `<div class="role-badge viewer">👁 ${d.role === 'viewer' ? 'Просмотр' : 'Полный'}</div>` : '';
+    return `
+      <div class="device-card ${cls}" onclick="openPanel(${d.id})">
+        ${roleTag}
+        <div class="device-icon-wrap">${deviceIcon(d)}</div>
+        <div class="device-name">${escHtml(d.name)}</div>
+        <div class="status-pill ${pill}">
+          <span class="status-dot ${dot}"></span>${txt}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+/* ─── Panel ──────────────────────────────────────────────────────────────────── */
+async function openPanel(id) {
+  selId = id;
+  const d = devices.find(x => x.id === id);
+  if (!d) return;
+
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('panel').classList.add('open');
+  updatePanelData(d);
+
+  if (d.online) {
+    document.getElementById('p-logs').innerHTML =
+      '<div style="color:var(--muted);font-size:12px;padding:4px 0">Загрузка журнала...</div>';
+    await loadLogs(id);
+  }
+}
+
+function closePanel() {
+  selId = null;
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('panel').classList.remove('open');
+}
+
+function updatePanelData(d) {
+  document.getElementById('p-title').textContent = d.name;
+  document.getElementById('p-chip').textContent  = d.chip_id;
+  document.getElementById('p-icon').textContent  = deviceIcon(d);
+
+  const roleLabels = { owner: '👑 Владелец', full: '✏️ Полный доступ', viewer: '👁 Просмотр' };
+  document.getElementById('p-role-label').textContent = roleLabels[d.role] || '';
+
+  const isOwner = d.role === 'owner';
+  const canControl = d.role !== 'viewer';
+
+  // Offline handling
+  const panelOffline = document.getElementById('panel-offline');
+  const panelBody    = document.getElementById('panel-online-body');
+
+  if (!d.online) {
+    panelOffline.style.display = '';
+    panelBody.style.display    = 'none';
+    document.getElementById('p-lastseen-offline').textContent =
+      d.last_seen ? 'Последний выход: ' + fmtDate(d.last_seen) : 'Данных нет';
+    document.getElementById('p-rename-btn').style.display = isOwner ? '' : 'none';
+    return;
+  }
+
+  panelOffline.style.display = 'none';
+  panelBody.style.display    = '';
+
+  // Status dot
+  const bdot = document.getElementById('p-bdot');
+  bdot.className = 'status-dot ' + (d.leak ? 'dot-leak' : 'dot-online');
+  document.getElementById('p-status-txt').textContent =
+    d.leak ? '⚠️ Протечка обнаружена!' : '✅ На связи';
+  document.getElementById('p-lastseen').textContent =
+    d.last_seen ? 'Обновлено: ' + fmtDate(d.last_seen) : '';
+
+  // Battery
+  const pct = (d.battery !== undefined && d.battery !== null) ? d.battery : 0;
+  const vlt = d.voltage ? `${d.voltage}V` : '--V';
+
+  document.getElementById('p-battery-bar').style.width      = pct + '%';
+  document.getElementById('p-battery-bar').style.background = batteryColor(pct);
+  document.getElementById('p-battery-label').textContent    = `Заряд: ${pct}% (${vlt})`;
+
+  // Valve button
+  const vb = document.getElementById('p-valve-btn');
+  vb.disabled  = !canControl;
+  vb.className = 'valve-btn ' + (d.valve_open ? 'v-close' : 'v-open');
+  vb.textContent = d.valve_open ? '🔒 Закрыть кран' : '🚰 Открыть кран';
+
+  // Slider — only update if not being dragged
+  const slider = document.getElementById('p-slider');
+  if (document.activeElement !== slider) {
+    slider.value = d.valve_percent;
+    document.getElementById('p-slider-val').textContent = d.valve_percent;
+  }
+  slider.disabled = !canControl;
+
+  // Show/hide sections
+  document.getElementById('valve-section').style.display =
+    d.device_type === 'water_sensor' ? '' : 'none';
+  document.getElementById('owner-actions').style.display  = isOwner ? '' : 'none';
+  document.getElementById('viewer-notice').style.display  = !canControl ? '' : 'none';
+  document.getElementById('p-rename-btn').style.display   = (isOwner || canControl) ? '' : 'none';
+}
+
+/* ─── Logs ───────────────────────────────────────────────────────────────────── */
+async function loadLogs(id) {
+  try {
+    const r = await fetch(`/api/devices/${id}/logs`);
+    if (!r.ok) return;
+    const logs = await r.json();
+
+    const icons = { leak: '💦', dry: '✅', valve: '🚰', claimed: '🔗', registered: '🔌',
+                    low_battery: '🔋', shared: '👥' };
+
+    const html = logs.map(l => {
+      const icon = icons[l.event] || 'ℹ️';
+      const cls  = l.event;
+      return `<div class="log-item log-${escHtml(cls)}">
+        <div class="log-time">${escHtml(fmtDate(l.time))}</div>
+        <div class="log-msg">${icon} ${escHtml(l.msg || l.event)}</div>
+      </div>`;
+    }).join('');
+
+    document.getElementById('p-logs').innerHTML =
+      html || '<div style="color:var(--muted);font-size:12px;padding:4px 0">Журнал пуст</div>';
+  } catch {}
+}
+
+/* ─── Valve actions ──────────────────────────────────────────────────────────── */
+async function doValve() {
+  const d = devices.find(x => x.id === selId);
+  if (!d) return;
+
+  const newState = !d.valve_open;
+  const btn = document.getElementById('p-valve-btn');
+  const oldText = btn.textContent;
+
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span> ${newState ? 'Открываю...' : 'Закрываю...'}`;
+
+  try {
+    const r = await fetch(`/api/devices/${selId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ valve_open: newState }),
+    });
+
+    if (r.ok) {
+      const result = await r.json();
+      d.valve_open = result.valve_open;
+      d.valve_percent = result.valve_percent;
+      updatePanelData(d);
+      showToast('ok', 'Готово', newState ? 'Кран открывается' : 'Кран закрывается');
+    } else {
+      showToast('warn', 'Ошибка', 'Сервер отклонил команду');
+    }
+  } catch (e) {
+    showToast('warn', 'Ошибка сети', 'Нет связи с сервером');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function onSliderInput(v) {
+  document.getElementById('p-slider-val').textContent = v;
+}
+
+async function doSlider(v) {
+  const val = parseInt(v);
+  document.getElementById('p-slider-val').textContent = val;
+  try {
+    const r = await fetch(`/api/devices/${selId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ valve_percent: val }),
+    });
+    if (r.ok) {
+      const result = await r.json();
+      const d = devices.find(x => x.id === selId);
+      if (d) {
+        // Обновляем локальные данные из ответа сервера
+        d.valve_open = result.valve_open;
+        d.valve_percent = result.valve_percent;
+        updatePanelData(d); // Перерисовываем панель
+      }
+      showToast('ok', 'Положение изменено', `Установлено: ${val}%`);
+    }
+  } catch (e) {
+    showToast('warn', 'Ошибка', 'Не удалось отправить команду');
+  }
+}
+
+/* ─── Rename ─────────────────────────────────────────────────────────────────── */
+async function doRename() {
+  const d = devices.find(x => x.id === selId);
+  if (!d) return;
+  const { value } = await Swal.fire({
+    title: 'Переименовать устройство',
+    input: 'text', inputValue: d.name,
+    inputPlaceholder: 'Название устройства',
+    showCancelButton: true, confirmButtonText: 'Сохранить', cancelButtonText: 'Отмена',
+    inputValidator: v => !v.trim() && 'Введите название',
+  });
+  if (!value) return;
+  const r = await fetch(`/api/devices/${selId}`, {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: value.trim() }),
+  });
+  if (r.ok) await load();
+}
+
+/* ─── Delete ─────────────────────────────────────────────────────────────────── */
+async function doDelete() {
+  const { isConfirmed } = await Swal.fire({
+    title: 'Отвязать устройство?',
+    text: 'Устройство будет удалено из аккаунта. Все данные журнала будут утеряны.',
+    icon: 'warning', showCancelButton: true,
+    confirmButtonText: 'Да, отвязать', cancelButtonText: 'Отмена',
+    confirmButtonColor: '#dc2626',
+  });
+  if (!isConfirmed) return;
+  const r = await fetch(`/api/devices/${selId}`, { method: 'DELETE' });
+  if (r.ok) { closePanel(); await load(); }
+}
+
+/* ─── Family access / shares ─────────────────────────────────────────────────── */
+async function showShares() {
+  const d = devices.find(x => x.id === selId);
+  if (!d) return;
+
+  // Load current shares
+  let shares = [];
+  try {
+    const r = await fetch(`/api/devices/${selId}/shares`);
+    if (r.ok) shares = await r.json();
+  } catch {}
+
+  const shareHtml = shares.length === 0
+    ? '<div style="color:var(--muted);font-size:13px;text-align:center;padding:10px 0;">Доступ не выдан</div>'
+    : shares.map(s => `
+      <div class="share-user-row">
+        <div class="share-user-avatar">${s.username[0].toUpperCase()}</div>
+        <div class="share-user-name">${escHtml(s.username)}</div>
+        <div class="share-role-badge ${s.role === 'full' ? 'role-full' : 'role-viewer'}">
+          ${s.role === 'full' ? 'Полный' : 'Просмотр'}
+        </div>
+        <button class="revoke-btn" onclick="revokeShare(${s.user_id})" title="Отозвать">✕</button>
+      </div>`).join('');
+
+  await Swal.fire({
+    title: '👨‍👩‍👧 Семейный доступ',
+    html: `
+      <div style="text-align:left; font-size:13px; color:var(--muted); margin-bottom:14px;">
+        Поделитесь доступом к устройству с другими пользователями Alidux.
+      </div>
+      <div id="shares-list" style="margin-bottom:18px;">${shareHtml}</div>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <input id="share-username" type="text" placeholder="Логин пользователя"
+          style="width:100%; padding:11px 14px; border:1.5px solid #e0e7ff; border-radius:11px;
+                 font-size:14px; outline:none; font-family:inherit; background:#f5f8ff;"
+          onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e0e7ff'">
+        <div style="display:flex; gap:8px; justify-content:center;">
+          <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:13px;">
+            <input type="radio" name="share-role" value="viewer" checked> 👁 Просмотр
+          </label>
+          <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:13px;">
+            <input type="radio" name="share-role" value="full"> ✏️ Полный доступ
+          </label>
+        </div>
+      </div>`,
+    showCancelButton: true,
+    confirmButtonText: 'Добавить доступ',
+    cancelButtonText: 'Закрыть',
+    confirmButtonColor: '#2563eb',
+    preConfirm: () => {
+      const uname = document.getElementById('share-username').value.trim();
+      const role  = document.querySelector('input[name="share-role"]:checked')?.value || 'viewer';
+      if (!uname) { Swal.showValidationMessage('Введите логин пользователя'); return false; }
+      return { username: uname, role };
+    },
+  }).then(async ({ isConfirmed, value }) => {
+    if (!isConfirmed || !value) return;
+    try {
+      const r = await fetch(`/api/devices/${selId}/share`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(value),
+      });
+      if (r.ok) {
+        showToast('ok', 'Доступ выдан', `${value.username} теперь имеет доступ`);
+      } else {
+        const err = await r.json().catch(() => ({}));
+        showToast('warn', 'Ошибка', err.detail || 'Не удалось выдать доступ');
+      }
+    } catch { showToast('warn', 'Ошибка сети', ''); }
+  });
+}
+
+async function revokeShare(userId) {
+  const { isConfirmed } = await Swal.fire({
+    title: 'Отозвать доступ?', icon: 'warning',
+    showCancelButton: true, confirmButtonText: 'Да',
+    cancelButtonText: 'Отмена', confirmButtonColor: '#dc2626',
+  });
+  if (!isConfirmed) return;
+  await fetch(`/api/devices/${selId}/shares/${userId}`, { method: 'DELETE' });
+  showToast('ok', 'Доступ отозван', '');
+  Swal.close();
+}
+
+/* ─── Add device (claim code flow) ──────────────────────────────────────────── */
+async function showAdd() {
+  // Generate claim code
+  let codeData = null;
+  try {
+    const r = await fetch('/api/generate-claim-code', { method: 'POST' });
+    if (r.ok) codeData = await r.json();
+  } catch {}
+
+  if (!codeData) {
+    showToast('warn', 'Ошибка', 'Не удалось получить код привязки');
+    return;
+  }
+
+  const digits = codeData.code.split('');
+  const expiresAt = new Date(codeData.expires_at + 'Z');
+
+  let timerInterval;
+
+  await Swal.fire({
+    title: '🔗 Добавить устройство',
+    html: `
+      <div style="font-size:13px; color:var(--muted); text-align:center; margin-bottom:16px;">
+        Введите этот 4-значный код на вашем устройстве (через веб-интерфейс настройки или физические кнопки).
+      </div>
+      <div style="display:flex; justify-content:center; gap:10px; margin:16px 0;">
+        ${digits.map(d => `
+          <div style="width:56px; height:68px; border-radius:14px;
+            background:var(--blue-bg); border:2px solid var(--blue-l);
+            display:flex; align-items:center; justify-content:center;
+            font-size:34px; font-weight:900; color:var(--blue);
+            font-family:'Courier New',monospace;
+            box-shadow:0 4px 14px rgba(37,99,235,.15);">
+            ${escHtml(d)}
+          </div>`).join('')}
+      </div>
+      <div id="code-timer" style="text-align:center; font-size:12px; color:var(--muted); font-weight:600; margin-bottom:4px;"></div>
+      <div style="margin-top:16px; padding:12px 14px; background:#f0fdf4; border-radius:11px;
+        border:1px solid #bbf7d0; font-size:12px; color:#15803d; font-weight:600;">
+        💡 После ввода кода устройство появится в вашем аккаунте автоматически.
+        Страница обновляется каждые 4 секунды.
+      </div>`,
+    showCancelButton: true,
+    showConfirmButton: false,
+    cancelButtonText: 'Закрыть',
+    didOpen: () => {
+      timerInterval = setInterval(() => {
+        const remaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
+        const el = document.getElementById('code-timer');
+        if (!el) return;
+        const m = Math.floor(remaining / 60);
+        const s = remaining % 60;
+        el.textContent = `⏱ Действует ещё: ${m}:${String(s).padStart(2,'0')}`;
+        if (remaining <= 30) el.style.color = 'var(--red)';
+        if (remaining <= 0) { el.textContent = '⏰ Код истёк. Закройте и попробуйте снова.'; clearInterval(timerInterval); }
+      }, 500);
+    },
+    willClose: () => clearInterval(timerInterval),
+  });
+}
+
+/* ─── Polling ────────────────────────────────────────────────────────────────── */
+load();
+setInterval(load, 4000);
+</script>
+</body>
+</html>

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Вход — Alidux</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #f0f4ff;
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+  }
+
+  .bg-blob {
+    position: fixed; border-radius: 50%;
+    filter: blur(90px); opacity: 0.3; pointer-events: none; z-index: 0;
+  }
+  .blob1 {
+    width: 650px; height: 650px;
+    background: radial-gradient(circle, #3b82f6, #1d4ed8);
+    top: -250px; left: -200px;
+    animation: float1 14s ease-in-out infinite;
+  }
+  .blob2 {
+    width: 550px; height: 550px;
+    background: radial-gradient(circle, #60a5fa, #2563eb);
+    bottom: -180px; right: -180px;
+    animation: float2 17s ease-in-out infinite;
+  }
+  .blob3 {
+    width: 320px; height: 320px;
+    background: radial-gradient(circle, #bfdbfe, #3b82f6);
+    top: 45%; left: 50%; transform: translate(-50%,-50%);
+    animation: float3 11s ease-in-out infinite;
+  }
+  @keyframes float1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(45px,35px)} }
+  @keyframes float2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-35px,-45px)} }
+  @keyframes float3 { 0%,100%{transform:translate(-50%,-50%)} 50%{transform:translate(-45%,-56%)} }
+
+  .wrapper {
+    position: relative; z-index: 1;
+    display: flex; align-items: center; gap: 64px;
+  }
+
+  /* Left branding */
+  .branding {
+    display: none; flex-direction: column; gap: 18px; max-width: 340px;
+  }
+  @media(min-width:920px){ .branding { display: flex; } }
+
+  .brand-logo { display: flex; align-items: center; gap: 14px; }
+  .brand-logo img { width: 54px; height: 54px; object-fit: contain; }
+  .brand-name {
+    font-size: 36px; font-weight: 800; letter-spacing: -1px;
+    background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 60%, #60a5fa 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .brand-tagline {
+    font-size: 16px; font-weight: 500; color: #1e3a8a; line-height: 1.6;
+    padding-left: 4px;
+  }
+  .features { display: flex; flex-direction: column; gap: 10px; }
+  .feat {
+    display: flex; align-items: center; gap: 14px;
+    background: rgba(255,255,255,0.65);
+    border: 1px solid rgba(59,130,246,0.18);
+    border-radius: 14px; padding: 13px 18px;
+    backdrop-filter: blur(10px);
+    transition: transform .2s;
+  }
+  .feat:hover { transform: translateX(4px); }
+  .feat-icon { font-size: 24px; flex-shrink: 0; }
+  .feat-text { font-size: 13px; color: #1e3a8a; font-weight: 600; }
+
+  /* Card */
+  .card {
+    background: rgba(255,255,255,0.88);
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(59,130,246,0.18);
+    border-radius: 28px;
+    padding: 48px 42px;
+    width: 390px;
+    box-shadow:
+      0 24px 64px rgba(37,99,235,0.14),
+      0 0 0 1px rgba(255,255,255,0.9) inset;
+  }
+
+  .card-top { text-align: center; margin-bottom: 34px; }
+  .card-brand { display: flex; align-items: center; justify-content: center; gap: 12px; }
+  .card-brand img { width: 38px; height: 38px; object-fit: contain; }
+  .card-brand-name {
+    font-size: 28px; font-weight: 800; letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .card-sub { font-size: 13px; color: #6b7280; margin-top: 6px; }
+
+  .field { margin-bottom: 20px; }
+  label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 8px; }
+  .input-wrap { position: relative; }
+  .input-icon {
+    position: absolute; left: 13px; top: 50%;
+    transform: translateY(-50%); font-size: 17px; pointer-events: none;
+  }
+  input[type=text], input[type=password] {
+    width: 100%; padding: 13px 14px 13px 42px;
+    background: #f5f8ff;
+    border: 1.5px solid #e0e7ff;
+    border-radius: 12px; color: #111827; font-size: 15px;
+    transition: border-color .2s, box-shadow .2s, background .2s;
+    outline: none; font-family: inherit;
+  }
+  input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59,130,246,0.12);
+    background: #fff;
+  }
+
+  .btn {
+    width: 100%; padding: 14px;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    border: none; border-radius: 13px;
+    color: #fff; font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: all .2s; font-family: inherit;
+    box-shadow: 0 4px 16px rgba(37,99,235,0.38);
+    letter-spacing: .3px;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(37,99,235,0.48); }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+  .alert {
+    border-radius: 12px; padding: 11px 14px;
+    font-size: 13px; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 9px;
+  }
+  .alert-error   { background:#fef2f2; border:1.5px solid #fca5a5; color:#dc2626; }
+  .alert-success { background:#f0fdf4; border:1.5px solid #86efac; color:#16a34a; }
+
+  .divider {
+    display: flex; align-items: center; gap: 10px;
+    margin: 24px 0; color: #9ca3af; font-size: 13px;
+  }
+  .divider::before, .divider::after {
+    content:''; flex: 1; height: 1px; background: #e5e7eb;
+  }
+
+  .register-link {
+    display: block; text-align: center;
+    padding: 13px; border: 1.5px solid #e0e7ff;
+    border-radius: 13px; color: #2563eb;
+    font-size: 14px; font-weight: 600;
+    text-decoration: none; transition: all .2s;
+  }
+  .register-link:hover { background: #eff6ff; border-color: #3b82f6; transform: translateY(-1px); }
+
+  .spinner {
+    display: inline-block; width: 15px; height: 15px;
+    border: 2px solid rgba(255,255,255,.35); border-top-color: #fff;
+    border-radius: 50%; animation: spin .6s linear infinite;
+    vertical-align: middle; margin-right: 7px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="bg-blob blob1"></div>
+<div class="bg-blob blob2"></div>
+<div class="bg-blob blob3"></div>
+
+<div class="wrapper">
+
+  <div class="branding">
+    <div class="brand-logo">
+      <img src="https://alidux.by/favicon/favicon.svg" alt="Alidux"
+           onerror="this.style.display='none'">
+      <span class="brand-name">Alidux</span>
+    </div>
+    <div class="brand-tagline">Умный мониторинг протечек воды<br>в режиме реального времени</div>
+    <div class="features">
+      <div class="feat"><span class="feat-icon">💧</span><span class="feat-text">Мгновенное обнаружение протечек</span></div>
+      <div class="feat"><span class="feat-icon">🚰</span><span class="feat-text">Дистанционное управление краном</span></div>
+      <div class="feat"><span class="feat-icon">🔋</span><span class="feat-text">Мониторинг заряда батареи</span></div>
+      <div class="feat"><span class="feat-icon">📡</span><span class="feat-text">Поддержка нескольких устройств</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-top">
+      <div class="card-brand">
+        <img src="https://alidux.by/favicon/favicon.svg" alt="Alidux"
+             onerror="this.style.display='none'">
+        <span class="card-brand-name">Alidux</span>
+      </div>
+      <div class="card-sub">Система мониторинга протечек воды</div>
+    </div>
+
+    <div id="error-box"   class="alert alert-error"   style="display:none"></div>
+    <div id="success-box" class="alert alert-success" style="display:none"></div>
+
+    <form id="login-form">
+      <div class="field">
+        <label>Логин</label>
+        <div class="input-wrap">
+          <span class="input-icon">👤</span>
+          <input type="text" name="username" placeholder="Введите логин"
+                 autocomplete="username" required>
+        </div>
+      </div>
+      <div class="field">
+        <label>Пароль</label>
+        <div class="input-wrap">
+          <span class="input-icon">🔑</span>
+          <input type="password" name="password" placeholder="Введите пароль"
+                 autocomplete="current-password" required>
+        </div>
+      </div>
+      <button type="submit" class="btn" id="submit-btn">Войти</button>
+    </form>
+
+    <div class="divider">или</div>
+    <a href="/register" class="register-link">Создать новый аккаунт →</a>
+  </div>
+</div>
+
+<script>
+  const params = new URLSearchParams(location.search);
+  if (params.get('registered') === '1') {
+    const b = document.getElementById('success-box');
+    b.style.display = 'flex';
+    b.innerHTML = '<span>✅</span><span>Аккаунт создан! Теперь вы можете войти.</span>';
+  }
+
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submit-btn');
+    const err = document.getElementById('error-box');
+    err.style.display = 'none';
+    btn.innerHTML = '<span class="spinner"></span>Выполняется вход…';
+    btn.disabled = true;
+
+    try {
+      const res = await fetch('/login', { method:'POST', body: new FormData(e.target), redirect:'follow' });
+      if (res.ok || res.redirected) { window.location.href = res.url || '/'; return; }
+      const data = await res.json().catch(() => ({ detail: 'Ошибка входа.' }));
+      err.innerHTML = '<span>❌</span><span>' + (data.detail || 'Неверный логин или пароль.') + '</span>';
+      err.style.display = 'flex';
+    } catch {
+      err.innerHTML = '<span>❌</span><span>Ошибка сети. Попробуйте ещё раз.</span>';
+      err.style.display = 'flex';
+    }
+    btn.innerHTML = 'Войти'; btn.disabled = false;
+  });
+</script>
+</body>
+</html>

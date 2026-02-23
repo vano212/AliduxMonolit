@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Регистрация — Alidux</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #f0f4ff; min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+  }
+
+  .bg-blob {
+    position: fixed; border-radius: 50%;
+    filter: blur(90px); opacity: 0.3; pointer-events: none; z-index: 0;
+  }
+  .blob1 {
+    width: 650px; height: 650px;
+    background: radial-gradient(circle, #3b82f6, #1d4ed8);
+    top: -250px; right: -200px;
+    animation: float1 14s ease-in-out infinite;
+  }
+  .blob2 {
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, #60a5fa, #2563eb);
+    bottom: -150px; left: -150px;
+    animation: float2 17s ease-in-out infinite;
+  }
+  @keyframes float1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-40px,30px)} }
+  @keyframes float2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(30px,-40px)} }
+
+  .card {
+    position: relative; z-index: 1;
+    background: rgba(255,255,255,0.88);
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(59,130,246,0.18);
+    border-radius: 28px; padding: 48px 42px; width: 420px;
+    box-shadow: 0 24px 64px rgba(37,99,235,0.14), 0 0 0 1px rgba(255,255,255,0.9) inset;
+  }
+
+  .card-top { text-align: center; margin-bottom: 32px; }
+  .card-brand { display: flex; align-items: center; justify-content: center; gap: 12px; }
+  .card-brand img { width: 38px; height: 38px; object-fit: contain; }
+  .card-brand-name {
+    font-size: 28px; font-weight: 800; letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .card-sub { font-size: 13px; color: #6b7280; margin-top: 6px; }
+  .card-title { font-size: 18px; font-weight: 700; color: #111827; margin-top: 16px; }
+
+  .field { margin-bottom: 18px; }
+  label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 8px; }
+  .input-wrap { position: relative; }
+  .input-icon {
+    position: absolute; left: 13px; top: 50%;
+    transform: translateY(-50%); font-size: 17px; pointer-events: none;
+  }
+  input[type=text], input[type=password] {
+    width: 100%; padding: 13px 14px 13px 42px;
+    background: #f5f8ff; border: 1.5px solid #e0e7ff;
+    border-radius: 12px; color: #111827; font-size: 15px;
+    transition: border-color .2s, box-shadow .2s, background .2s;
+    outline: none; font-family: inherit;
+  }
+  input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59,130,246,0.12);
+    background: #fff;
+  }
+  .hint { font-size: 11px; color: #9ca3af; margin-top: 5px; padding-left: 2px; }
+
+  /* Password strength */
+  .strength-wrap { margin-top: 8px; }
+  .strength-track {
+    height: 5px; background: #e5e7eb; border-radius: 3px; overflow: hidden;
+  }
+  .strength-fill {
+    height: 100%; width: 0; border-radius: 3px;
+    transition: width .35s, background .35s;
+  }
+  .strength-label { font-size: 11px; color: #9ca3af; margin-top: 4px; }
+
+  .btn {
+    width: 100%; padding: 14px;
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    border: none; border-radius: 13px;
+    color: #fff; font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: all .2s; font-family: inherit;
+    box-shadow: 0 4px 16px rgba(22,163,74,0.35);
+    letter-spacing: .3px;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(22,163,74,0.45); }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+  .alert {
+    border-radius: 12px; padding: 11px 14px;
+    font-size: 13px; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 9px;
+  }
+  .alert-error { background:#fef2f2; border:1.5px solid #fca5a5; color:#dc2626; }
+
+  .divider {
+    display: flex; align-items: center; gap: 10px;
+    margin: 22px 0; color: #9ca3af; font-size: 13px;
+  }
+  .divider::before, .divider::after { content:''; flex:1; height:1px; background:#e5e7eb; }
+
+  .login-link {
+    display: block; text-align: center; padding: 13px;
+    border: 1.5px solid #e0e7ff; border-radius: 13px;
+    color: #2563eb; font-size: 14px; font-weight: 600;
+    text-decoration: none; transition: all .2s;
+  }
+  .login-link:hover { background: #eff6ff; border-color: #3b82f6; transform: translateY(-1px); }
+
+  .spinner {
+    display: inline-block; width: 15px; height: 15px;
+    border: 2px solid rgba(255,255,255,.35); border-top-color: #fff;
+    border-radius: 50%; animation: spin .6s linear infinite;
+    vertical-align: middle; margin-right: 7px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="bg-blob blob1"></div>
+<div class="bg-blob blob2"></div>
+
+<div class="card">
+  <div class="card-top">
+    <div class="card-brand">
+      <img src="https://alidux.by/favicon/favicon.svg" alt="Alidux"
+           onerror="this.style.display='none'">
+      <span class="card-brand-name">Alidux</span>
+    </div>
+    <div class="card-sub">Система мониторинга протечек воды</div>
+    <div class="card-title">Создание аккаунта</div>
+  </div>
+
+  <div id="error-box" class="alert alert-error" style="display:none"></div>
+
+  <form id="reg-form">
+    <div class="field">
+      <label>Логин</label>
+      <div class="input-wrap">
+        <span class="input-icon">👤</span>
+        <input type="text" id="username" name="username"
+               placeholder="Только буквы, цифры и _" autocomplete="username" required>
+      </div>
+      <div class="hint">От 3 до 32 символов: латинские буквы, цифры, знак подчёркивания</div>
+    </div>
+
+    <div class="field">
+      <label>Пароль</label>
+      <div class="input-wrap">
+        <span class="input-icon">🔑</span>
+        <input type="password" id="password" name="password"
+               placeholder="Минимум 6 символов" autocomplete="new-password" required>
+      </div>
+      <div class="strength-wrap">
+        <div class="strength-track"><div class="strength-fill" id="sfill"></div></div>
+        <div class="strength-label" id="slabel">Введите пароль</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Подтверждение пароля</label>
+      <div class="input-wrap">
+        <span class="input-icon">🔒</span>
+        <input type="password" id="password2" name="password2"
+               placeholder="Повторите пароль" autocomplete="new-password" required>
+      </div>
+    </div>
+
+    <button type="submit" class="btn" id="submit-btn">Создать аккаунт</button>
+  </form>
+
+  <div class="divider">или</div>
+  <a href="/login" class="login-link">Уже есть аккаунт? Войти →</a>
+</div>
+
+<script>
+  const levels = [
+    { label: '😟 Очень слабый', color: '#ef4444', w: '20%' },
+    { label: '😕 Слабый',        color: '#f97316', w: '40%' },
+    { label: '😐 Средний',       color: '#eab308', w: '60%' },
+    { label: '🙂 Хороший',       color: '#22c55e', w: '80%' },
+    { label: '💪 Надёжный',      color: '#16a34a', w: '100%' },
+  ];
+
+  document.getElementById('password').addEventListener('input', function() {
+    const v = this.value;
+    let s = 0;
+    if (v.length >= 6)  s++;
+    if (v.length >= 10) s++;
+    if (/[A-Z]/.test(v)) s++;
+    if (/[0-9]/.test(v)) s++;
+    if (/[^a-zA-Z0-9]/.test(v)) s++;
+    const l = levels[Math.min(s, 4)];
+    document.getElementById('sfill').style.width = v ? l.w : '0';
+    document.getElementById('sfill').style.background = l.color;
+    document.getElementById('slabel').textContent = v ? l.label : 'Введите пароль';
+    document.getElementById('slabel').style.color = v ? l.color : '#9ca3af';
+  });
+
+  document.getElementById('reg-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submit-btn');
+    const err = document.getElementById('error-box');
+    err.style.display = 'none';
+
+    const username  = document.getElementById('username').value.trim();
+    const password  = document.getElementById('password').value;
+    const password2 = document.getElementById('password2').value;
+
+    if (!/^[a-zA-Z0-9_]{3,32}$/.test(username)) {
+      err.innerHTML = '<span>❌</span><span>Логин должен содержать 3–32 символа: буквы, цифры, _</span>';
+      err.style.display = 'flex'; return;
+    }
+    if (password.length < 6) {
+      err.innerHTML = '<span>❌</span><span>Пароль должен быть не менее 6 символов.</span>';
+      err.style.display = 'flex'; return;
+    }
+    if (password !== password2) {
+      err.innerHTML = '<span>❌</span><span>Пароли не совпадают.</span>';
+      err.style.display = 'flex'; return;
+    }
+
+    btn.innerHTML = '<span class="spinner"></span>Создание аккаунта…'; btn.disabled = true;
+    const fd = new FormData(); fd.append('username', username); fd.append('password', password);
+
+    try {
+      // manual redirect — чтобы правильно перехватить 303 от FastAPI
+      const res = await fetch('/register', { method: 'POST', body: fd, redirect: 'manual' });
+
+      // 2xx или 3xx — успех, перенаправляем вручную
+      if (res.ok || res.type === 'opaqueredirect' || (res.status >= 300 && res.status < 400)) {
+        window.location.href = '/';
+        return;
+      }
+
+      // Пробуем распарсить ошибку
+      let detail = 'Ошибка регистрации.';
+      try {
+        const data = await res.json();
+        detail = data.detail || detail;
+      } catch (_) {}
+
+      err.innerHTML = '<span>❌</span><span>' + detail + '</span>';
+      err.style.display = 'flex';
+    } catch {
+      err.innerHTML = '<span>❌</span><span>Ошибка сети. Попробуйте ещё раз.</span>';
+      err.style.display = 'flex';
+    }
+    btn.innerHTML = 'Создать аккаунт'; btn.disabled = false;
+  });
+</script>
+</body>
+</html>
